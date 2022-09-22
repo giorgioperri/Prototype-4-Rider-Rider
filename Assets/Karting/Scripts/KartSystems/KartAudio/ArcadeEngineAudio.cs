@@ -1,5 +1,6 @@
 ﻿using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace KartGame.KartSystems
 {
@@ -16,6 +17,7 @@ namespace KartGame.KartSystems
         public AudioSource RunningSound;
         [Tooltip("What audio clip should play when the kart is drifting")]
         public AudioSource Drift;
+        public AudioSource topSpeed;
         [Tooltip("Maximum Volume the running sound will be at full speed")]
         [Range(0.1f, 1.0f)]public float RunningSoundMaxVolume = 1.0f;
         [Tooltip("Maximum Pitch the running sound will be at full speed")]
@@ -26,6 +28,14 @@ namespace KartGame.KartSystems
         [Range(0.1f, 1.0f)] public float ReverseSoundMaxVolume = 0.5f;
         [Tooltip("Maximum Pitch the Reverse sound will be at full Reverse speed")]
         [Range(0.1f, 2.0f)] public float ReverseSoundMaxPitch = 0.6f;
+
+        [SerializeField]
+        public AudioMixer tsMixer;
+        [SerializeField]
+        public AudioMixerSnapshot ts;
+        [SerializeField]
+        public AudioMixerSnapshot main;
+
 
         ArcadeKart arcadeKart;
 
@@ -41,6 +51,15 @@ namespace KartGame.KartSystems
             {
                 kartSpeed = arcadeKart.LocalSpeed();
                 Drift.volume = arcadeKart.IsDrifting && arcadeKart.GroundPercent > 0.0f ? arcadeKart.Rigidbody.velocity.magnitude / arcadeKart.GetMaxSpeed() : 0.0f;
+            }
+
+            if(kartSpeed > 0.9)
+            {
+                ts.TransitionTo(1f);
+            }
+            else
+            {
+                main.TransitionTo(1f);
             }
 
             IdleSound.volume    = Mathf.Lerp(0.6f, 0.0f, kartSpeed * 4);
