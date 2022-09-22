@@ -3,10 +3,22 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.VFX;
 
+public enum ItemType
+{
+    mnm,
+    bass,
+    booze,
+    amp
+}
+
 namespace KartGame.KartSystems
 {
     public class ArcadeKart : MonoBehaviour
     {
+        public bool hasItem;
+        public ItemType currentItem;
+        public AudioSource audioSource;
+        
         [System.Serializable]
         public class StatPowerup
         {
@@ -19,6 +31,7 @@ namespace KartGame.KartSystems
         [System.Serializable]
         public struct Stats
         {
+            
             [Header("Movement Settings")]
             [Min(0.001f), Tooltip("Top speed attainable when moving forward.")]
             public float TopSpeed;
@@ -183,6 +196,7 @@ namespace KartGame.KartSystems
 
         public void AddPowerup(StatPowerup statPowerup) => m_ActivePowerupList.Add(statPowerup);
         public void SetCanMove(bool move) => m_CanMove = move;
+        
         public float GetMaxSpeed() => Mathf.Max(m_FinalStats.TopSpeed, m_FinalStats.ReverseSpeed);
 
         private void ActivateDriftVFX(bool active)

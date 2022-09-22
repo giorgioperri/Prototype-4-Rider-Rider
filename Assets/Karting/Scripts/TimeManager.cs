@@ -34,7 +34,7 @@ public class TimeManager : MonoBehaviour
         OnSetTime -= SetTime;
     }
 
-    private void AdjustTime(float delta)
+    public void AdjustTime(float delta)
     {
         TimeRemaining += delta;
     }

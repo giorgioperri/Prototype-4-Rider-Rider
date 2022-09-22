@@ -3,11 +3,19 @@ using UnityEngine;
 using UnityEngine.Playables;
 using KartGame.KartSystems;
 using UnityEngine.SceneManagement;
+using System.Linq;
 
 public enum GameState{Play, Won, Lost}
 
 public class GameFlowManager : MonoBehaviour
 {
+    public GameObject[] LevelPrefabs;
+    public Transform[] LevelSpawnPoints;
+
+    public Transform mapCenter;
+
+    public int deliveredObjects = 0;
+    
     [Header("Parameters")]
     [Tooltip("Duration of the fade-to-black at the end of the game")]
     public float endSceneLoadDelay = 3f;
@@ -23,6 +31,7 @@ public class GameFlowManager : MonoBehaviour
     public float delayBeforeWinMessage = 2f;
     [Tooltip("Sound played on win")]
     public AudioClip victorySound;
+    public AudioClip loseSound;
 
     [Tooltip("Prefab for the win game message")]
     public DisplayMessage winDisplayMessage;
@@ -33,7 +42,7 @@ public class GameFlowManager : MonoBehaviour
     [Tooltip("This string has to be the name of the scene you want to load when losing")]
     public string loseSceneName = "LoseScene";
     [Tooltip("Prefab for the lose game message")]
-    public DisplayMessage loseDisplayMessage;
+    public GameObject loseDisplay;
 
 
     public GameState gameState { get; private set; }
@@ -43,7 +52,7 @@ public class GameFlowManager : MonoBehaviour
 
     ArcadeKart[] karts;
     ObjectiveManager m_ObjectiveManager;
-    TimeManager m_TimeManager;
+    public TimeManager m_TimeManager;
     float m_TimeLoadEndGameScene;
     string m_SceneToLoad;
     float elapsedTimeBeforeEndScene = 0;
@@ -69,7 +78,7 @@ public class GameFlowManager : MonoBehaviour
         AudioUtility.SetMasterVolume(1);
 
         winDisplayMessage.gameObject.SetActive(false);
-        loseDisplayMessage.gameObject.SetActive(false);
+        loseDisplay.gameObject.SetActive(false);
 
         m_TimeManager.StopRace();
         foreach (ArcadeKart k in karts)
@@ -77,11 +86,9 @@ public class GameFlowManager : MonoBehaviour
 			k.SetCanMove(false);
         }
 
-        //run race countdown animation
-        ShowRaceCountdownAnimation();
-        StartCoroutine(ShowObjectivesRoutine());
 
-        StartCoroutine(CountdownThenStartRaceRoutine());
+        SpawnLevels();
+        StartRace();
     }
 
     IEnumerator CountdownThenStartRaceRoutine() {
@@ -89,11 +96,35 @@ public class GameFlowManager : MonoBehaviour
         StartRace();
     }
 
+    void SpawnLevels()
+    {
+        if (LevelPrefabs.Length == 0) return;
+
+        System.Random randLev = new System.Random();
+        int i = randLev.Next(0, LevelPrefabs.Length);
+        
+        System.Random randSpawner = new System.Random();
+        int j = randSpawner.Next(0, LevelSpawnPoints.Length);
+
+        Instantiate(LevelPrefabs[i], LevelSpawnPoints[j].position, Quaternion.Euler(Vector3.zero), LevelSpawnPoints[j]);
+
+        //level.transform.rotation = Quaternion.LookRotation(mapCenter.position, Vector3.up);
+
+        LevelPrefabs = LevelPrefabs.Where(val => val != LevelPrefabs[i]).ToArray();
+        LevelSpawnPoints = LevelSpawnPoints.Where(val => val != LevelSpawnPoints[j]).ToArray();
+        
+        SpawnLevels();
+    }
+
     void StartRace() {
         foreach (ArcadeKart k in karts)
         {
 			k.SetCanMove(true);
         }
+    }
+
+    public void StartTimer()
+    {
         m_TimeManager.StartRace();
     }
 
@@ -139,7 +170,7 @@ public class GameFlowManager : MonoBehaviour
         }
         else
         {
-            if (m_ObjectiveManager.AreAllObjectivesCompleted())
+            if (deliveredObjects == 4)
                 EndGame(true);
 
             if (m_TimeManager.IsFinite && m_TimeManager.IsOver)
@@ -180,8 +211,9 @@ public class GameFlowManager : MonoBehaviour
             m_TimeLoadEndGameScene = Time.time + endSceneLoadDelay + delayBeforeFadeToBlack;
 
             // create a game message
-            loseDisplayMessage.delayBeforeShowing = delayBeforeWinMessage;
-            loseDisplayMessage.gameObject.SetActive(true);
+            loseDisplay.gameObject.SetActive(true);
+            var audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.PlayOneShot(loseSound);
         }
     }
 }
