@@ -13,6 +13,8 @@ public class itemPickup : MonoBehaviour
 
     public AudioClip pickupSound;
 
+    public AudioSource source;
+
     public ItemType itemType;
     
     private void Start()
@@ -30,11 +32,18 @@ public class itemPickup : MonoBehaviour
     {
         if (other.CompareTag("Player") && !playerKart.hasItem)
         {
-            playerKart.audioSource.PlayOneShot(pickupSound);
+            source.PlayOneShot(pickupSound);
             playerKart.currentItem = itemType;
             playerKart.hasItem = true;
             manager.StartTimer();
-            Destroy(this.gameObject);
+            StartCoroutine(DestroyThis());
         }
+    }
+    IEnumerator DestroyThis()
+    {
+        Debug.Log("I am destroying myself");
+        yield return new WaitForSeconds(0.8f);
+        Destroy(this.gameObject);
+
     }
 }
